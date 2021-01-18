@@ -23,51 +23,51 @@ jobs:
             - venv
           key: dependencies-{{ checksum "requirements/dev.txt"}}-{{ checksum "requirements/prod.txt" }}
           
-    test:
-      docker: 
-        - image: circleci/python:3.9-buster-node-browsers
-        - image: circleci/postgres:9.6.2-alpine
+  test:
+    docker: 
+      - image: circleci/python:3.9-buster-node-browsers
+      - image: circleci/postgres:9.6.2-alpine
+        environment:
+          POSTGRES_USER: postgres
+          POSTGRES_DB: postgres
+          POSTGRES_PASSWORD: root
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - restore_cache:
+          keys: 
+            -dependencies-{{ checksum "requirements/dev.txt"}}-{{ checksum "requirements/prod.txt" }}
+            -dependencies
+      - run:
+          name: db upgrade 
+          command: |
+            . venv/bin/activate
+            sleep 1
+            flask db upgrade
           environment:
+            CONDUIT_SECRET: 'something-really-secret'
+            FLASK_APP: /home/circleci/repo/autoapp.py
+            DATABASE_URL: postgresql://postgres:root@localhost:5432/postgres
+            FLASK_DEBUG: 1
             POSTGRES_USER: postgres
             POSTGRES_DB: postgres
             POSTGRES_PASSWORD: root
-      working_directory: ~/repo
-      steps:
-        - checkout
-        - restore_cache:
-            keys: 
-              -dependencies-{{ checksum "requirements/dev.txt"}}-{{ checksum "requirements/prod.txt" }}
-              -dependencies
-        - run:
-            name: db upgrade 
-            command: |
-              . venv/bin/activate
-              sleep 1
-              flask db upgrade
-            environment:
-              CONDUIT_SECRET: 'something-really-secret'
-              FLASK_APP: /home/circleci/repo/autoapp.py
-              DATABASE_URL: postgresql://postgres:root@localhost:5432/postgres
-              FLASK_DEBUG: 1
-              POSTGRES_USER: postgres
-              POSTGRES_DB: postgres
-              POSTGRES_PASSWORD: root
-              POSTGRES_PORT: 5432
-        - run: 
-            name: db test
-            command: |
-              . venv/bin/activate
-              flask db migrate
-              flask test
-            environment:
-              CONDUIT_SECRET: 'something-really-secret'
-              FLASK_APP: /home/circleci/repo/autoapp.py
-              DATABASE_URL: postgresql://postgres:root@localhost:5432/postgres
-              FLASK_DEBUG: 1
-              POSTGRES_USER: postgres
-              POSTGRES_DB: postgres
-              POSTGRES_PASSWORD: root
-              POSTGRES_PORT: 5432
+            POSTGRES_PORT: 5432
+      - run: 
+          name: db test
+          command: |
+            . venv/bin/activate
+            flask db migrate
+            flask test
+          environment:
+            CONDUIT_SECRET: 'something-really-secret'
+            FLASK_APP: /home/circleci/repo/autoapp.py
+            DATABASE_URL: postgresql://postgres:root@localhost:5432/postgres
+            FLASK_DEBUG: 1
+            POSTGRES_USER: postgres
+            POSTGRES_DB: postgres
+            POSTGRES_PASSWORD: root
+            POSTGRES_PORT: 5432
 
   deploy-heroku:
     docker: 
@@ -105,7 +105,7 @@ jobs:
             docker tag app $DOCKER_HUB_USER_ID/devops-final-back:1.0
             docker push $DOCKER_HUB_USER_ID/devops-final-back:$CIRCLE_BUILD_NUM
             docker push $DOCKER_HUB_USER_ID/devops-final-back:1.0
-
+            
 workflows:
   version: 2
   build-deploy:
@@ -119,4 +119,4 @@ workflows:
             - build
       - docker-build-and-push:
           requires:
-            -build
+            - build
