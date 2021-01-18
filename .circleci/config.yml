@@ -54,12 +54,11 @@ jobs:
       - checkout
       - run:
           name: Heroku deploy
-          command: |
-            git push https://heroku:$HEROKU_API_KEY@git.heroku.com/$HEROKU_APP_NAME.git main
+          command: git push https://heroku:$HEROKU_API_KEY@git.heroku.com/$HEROKU_APP_NAME.git HEAD:main
       - run:
           name: Smoke test
           command: |
-            HTTPCODE=`curl -s -o /dev/null -w "%{http_code}" https://$HEROKU_APP_NAME.herokuapp.com/api/articles`
+            HTTPCODE=`curl -s -o /dev/null -w "%{http_code}" https://$HEROKU_APP_NAME.herokuapp.com/`
             if [ "$HTTPCODE" -ne 200 ];then
               echo "heroku app not responding, failing deploy"
               exit 1
@@ -78,7 +77,7 @@ jobs:
       - run: 
           name: Publish app to docker hub
           command: |
-            docker login -e $DOCKER_HUB_EMAIL -u $DOCKER_HUB_USERNAME -p $DOCKER_HUB_PWD
+            docker login -e $DOCKER_HUB_EMAIL -u $DOCKER_HUB_USER_ID -p $DOCKER_HUB_PWD
             docker tag app $DOCKER_HUB_USERNAME/devops-final-back:$CIRCLE_BUILD_NUM
             docker tag app $DOCKER_HUB_USERNAME/devops-final-back:1.0
             docker push $DOCKER_HUB_USERNAME/devops-final-back:$CIRCLE_BUILD_NUM
