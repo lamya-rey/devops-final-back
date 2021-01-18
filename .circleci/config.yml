@@ -84,6 +84,7 @@ jobs:
             docker push $DOCKER_HUB_USERNAME/tp-devops-final-back:$CIRCLE_BUILD_NUM
             docker push $DOCKER_HUB_USERNAME/tp-devops-final-back:1.0
 workflows:
+  version: 2
   build-deploy:
     jobs:
       - build
