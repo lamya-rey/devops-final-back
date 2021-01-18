@@ -35,8 +35,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: 
-            -dependencies-{{ checksum "requirements/dev.txt"}}-{{ checksum "requirements/prod.txt" }}
+          key: dependencies-{{ checksum "requirements/dev.txt"}}-{{ checksum "requirements/prod.txt" }}
       - run:
           name: db upgrade 
           command: |
