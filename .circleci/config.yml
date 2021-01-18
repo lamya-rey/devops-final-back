@@ -82,7 +82,7 @@ jobs:
             docker login -e $DOCKER_HUB_EMAIL -u $DOCKER_HUB_USER_ID -p $DOCKER_HUB_PWD
             docker tag app $DOCKER_HUB_USER_ID/devops-final-back:$CIRCLE_BUILD_NUM
             docker tag app $DOCKER_HUB_USER_ID/devops-final-back:1.0
-            docker push $DOCKER_HUB_USER_IDdevops-final-back:$CIRCLE_BUILD_NUM
+            docker push $DOCKER_HUB_USER_ID/devops-final-back:$CIRCLE_BUILD_NUM
             docker push $DOCKER_HUB_USER_ID/devops-final-back:1.0
 workflows:
   version: 2
