@@ -20,26 +20,34 @@ jobs:
   test:
     docker: 
       - image: circleci/python:3.9-buster-node-browsers
-        environment:
-          DATABASE_URL: postgresql://postgres:root@localhost:5432/postgres
-          FLASK_APP: /home/circleci/repo/autoapp.py
-          CONDUIT_SECRET: 'something-really-secret'
-          FLASK_DEBUG: 1
-          POSTGRES_PORT: 5432 
       - image: circleci/postgres:9.6.2-alpine
         environment:
           POSTGRES_USER: postgres
           POSTGRES_DB: postgres
           POSTGRES_PASSWORD: root
+    working_directory: ~/repo
     steps:
       - checkout
       - restore_cache:
           key: dependencies-{{ checksum "requirements/dev.txt"}}-{{ checksum "requirements/prod.txt" }}
+
+      - run:
+          name: db upgrade 
+          command: |
+            . venv/bin/activate
+            sleep 1
+            flask db upgrade
+          environment:
+            CONDUIT_SECRET: 'something-really-secret'
+            FLASK_APP: /home/circleci/repo/autoapp.py
+            DATABASE_URL: postgresql://postgres:root@localhost:5432/postgres
+            FLASK_DEBUG: 1
+            POSTGRES_USER: myUser
+            POSTGRES_DB: mydb
+            POSTGRES_PASSWORD: somePwd
+            POSTGRES_PORT: 5432
       - run: 
-          name: sleep 1 
-          command : dockerize -wait tcp://localhost:5432 -timeout 1m
-      - run: 
-          name: run test
+          name: db test
           command: |
             . venv/bin/activate
             flask db migrate
