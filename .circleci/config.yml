@@ -19,9 +19,10 @@ jobs:
             FLASK_APP: /home/circleci/repo/autoapp.py
             FLASK_DEBUG: 1
       - save_cache:
-          key: dependencies-{{ checksum "requirements/dev.txt"}}-{{ checksum "requirements/prod.txt" }}
           paths: 
             - venv
+          key: dependencies-{{ checksum "requirements/dev.txt"}}-{{ checksum "requirements/prod.txt" }}
+          
   test:
     docker: 
       - image: circleci/python:3.9-buster-node-browsers
@@ -34,8 +35,9 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: dependencies-{{ checksum "requirements/dev.txt"}}-{{ checksum "requirements/prod.txt" }}
-
+          keys: 
+            -dependencies-{{ checksum "requirements/dev.txt"}}-{{ checksum "requirements/prod.txt" }}
+            -dependencies
       - run:
           name: db upgrade 
           command: |
@@ -47,9 +49,9 @@ jobs:
             FLASK_APP: /home/circleci/repo/autoapp.py
             DATABASE_URL: postgresql://postgres:root@localhost:5432/postgres
             FLASK_DEBUG: 1
-            POSTGRES_USER: myUser
-            POSTGRES_DB: mydb
-            POSTGRES_PASSWORD: somePwd
+            POSTGRES_USER: postgres
+            POSTGRES_DB: postgres
+            POSTGRES_PASSWORD: root
             POSTGRES_PORT: 5432
       - run: 
           name: db test
@@ -58,11 +60,14 @@ jobs:
             flask db migrate
             flask test
           environment:
-          DATABASE_URL: postgresql://postgres:root@localhost:5432/postgres
-          FLASK_APP: /home/circleci/repo/autoapp.py
-          CONDUIT_SECRET: 'something-really-secret'
-          FLASK_DEBUG: 1
-          POSTGRES_PORT: 5432 
+            CONDUIT_SECRET: 'something-really-secret'
+            FLASK_APP: /home/circleci/repo/autoapp.py
+            DATABASE_URL: postgresql://postgres:root@localhost:5432/postgres
+            FLASK_DEBUG: 1
+            POSTGRES_USER: postgres
+            POSTGRES_DB: postgres
+            POSTGRES_PASSWORD: root
+            POSTGRES_PORT: 5432
   deploy-heroku:
     docker: 
       - image : buildpack-deps:trusty
@@ -74,10 +79,10 @@ jobs:
       - run:
           name: Smoke test
           command: |
-            HTTPCODE=`curl -s -o /dev/null -w "%{http_code}" https://$HEROKU_APP_NAME.herokuapp.com/`
-            if [ "$HTTPCODE" -ne 200 ];then
-              echo "heroku app not responding, failing deploy"
-              exit 1
+            if [[ "$HTTPCODE" -ne 200 ]]; then
+              echo "heroku app not responding, failing deploy" \
+              exit 1 \
+              HTTPCODE=`curl -s -o /dev/null -w "%{http_code}" https://$HEROKU_APP_NAME.herokuapp.com/`
             fi
   docker-build-and-push:
     working_directory: /dockerapp
@@ -112,3 +117,4 @@ workflows:
       - docker-build-and-push:
           requires:
             - build
+            -deploy-heroku
